@@ -1,0 +1,11 @@
+--- Makefile.am.orig	Thu Sep 25 04:11:17 2025
++++ Makefile.am	Thu Sep 25 04:11:27 2025
+@@ -15,7 +15,7 @@
+ 
+ PACKAGE = sed
+ 
+-SUBDIRS = po . gnulib-tests
++SUBDIRS = po .
+ 
+ 
+ # This applies to all parts: gnulib, sed, testsuites

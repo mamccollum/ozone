@@ -1,0 +1,87 @@
+#!/bin/sh
+set -eu
+
+# metadata - edit per package
+NAME=subversion
+VER=1.14.5
+PKGNAME=OZsubversion
+PREFIX=/opt/oz
+TARBALL=${NAME}-${VER}.tar.gz
+TARBALL_URL="http://dlcdn.apache.org/subversion/${TARBALL}"
+# optional: set correct sha256 or leave empty to skip check
+TARBALL_SHA256=""
+PATCHDIR="$RECIPEDIR/patches"
+HOOKSDIR="$RECIPEDIR/hooks"
+
+CPPFLAGS="-I${PREFIX}/include -D_XPG6 -DPATH_MAX=1024"
+CFLAGS=""
+LDFLAGS="-L${PREFIX}/lib"
+
+: "${TOP:=$(pwd)}"
+: "${WORK:=${WORK:-${TOP}/build/${NAME}}}"
+: "${STAGING:=${STAGING:-${TOP}/build/${NAME}-staging}}"
+
+mkdir -p "${TOP}/src" "${WORK}" "${STAGING}"
+
+fetch() {
+	cd "${TOP}/src"
+	if [ ! -f "${TARBALL}" ]; then
+		echo "Downloading ${TARBALL_URL}..."
+curl -sSL -o "${TARBALL}" "${TARBALL_URL}" || { echo "curl failed"; exit 1; }
+	else
+		echo "Using cached ${TARBALL}"
+	fi
+
+	if [ -n "${TARBALL_SHA256}" ] && command -v sha256sum >/dev/null 2>&1; then
+		echo "${TARBALL_SHA256}	${TARBALL}" | sha256sum -c - || { echo "sha256 mismatch"; exit 1; }
+	else
+		echo "No checksum verification performed"
+	fi
+}
+
+extract() {
+	rm -rf "${WORK}" "${STAGING}"
+	mkdir -p "${WORK}" "${STAGING}"
+	gtar -C "${WORK}" -xzf "${TOP}/src/${TARBALL}"
+}
+
+apply_patches() {
+	if [ -d "${PATCHDIR}" ]; then
+		for p in "${PATCHDIR}"/*.patch; do
+			[ -f "$p" ] || continue
+			echo "Applying patch $p"
+			( cd "${WORK}/${NAME}-${VER}" && patch -p1 < "$p" ) || { echo "patch failed"; exit 1; }
+		done
+	fi
+}
+
+build() {
+	cd "${WORK}/${NAME}-${VER}"
+	# ensure DESTDIR install goes into staging
+	./configure --prefix="${PREFIX}" \
+	--enable-static --disable-shared \
+	--with-lz4=internal --with-utf8proc=internal \
+	CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CPPFLAGS="${CPPFLAGS}" \
+	--disable-nls \
+	LIBS='-lintl -lm'
+	gmake -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+	gmake install DESTDIR="${STAGING}"
+}
+
+package() {
+	sh "${TOP}/tools/make_svr4_pkg" \
+		--staging "${STAGING}" \
+		--pkgname "${PKGNAME}" \
+		--version "${VER}" \
+		--prefix "${PREFIX}" \
+		--hooksdir "${HOOKSDIR}"
+}
+
+# allow running phases directly: ./recipe fetch|extract|apply_patches|build|package
+if [ "$#" -gt 0 ]; then
+  for phase in "$@"; do
+    "$phase"
+  done
+fi
+
+

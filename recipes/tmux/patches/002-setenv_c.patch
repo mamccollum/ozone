@@ -1,0 +1,12 @@
+--- compat/setenv.c~	Tue Nov 25 05:32:05 2025
++++ compat/setenv.c	Tue Nov 25 05:32:28 2025
+@@ -22,6 +22,9 @@
+ 
+ #include "compat.h"
+ 
++/* POSIX stuffs */
++extern char **environ;
++
+ int
+ setenv(const char *name, const char *value, __unused int overwrite)
+ {

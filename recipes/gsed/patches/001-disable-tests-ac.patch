@@ -1,0 +1,9 @@
+--- configure.ac.orig	Thu Sep 25 02:35:39 2025
++++ configure.ac	Thu Sep 25 02:35:49 2025
+@@ -314,6 +314,5 @@
+ AC_CONFIG_FILES([
+   Makefile
+   po/Makefile.in
+-  gnulib-tests/Makefile
+ ])
+ AC_OUTPUT

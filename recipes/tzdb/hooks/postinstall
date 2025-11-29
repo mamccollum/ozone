@@ -1,0 +1,43 @@
+#!/bin/sh
+# postinstall script for installing zoneinfo symlink
+
+set -eu
+
+DATE_SUFFIX="$(date -u +%Y-%m-%d)"
+usrzone="/usr/share/zoneinfo"
+ozzone="/opt/oz/share/zoneinfo"
+
+already_linked=false
+if [ -h "$usrzone" ]; then
+    # extract the symlink target from ls -ld output
+    target="$(ls -ld "$usrzone" | awk '{print $NF}')"
+    if [ "$target" = "$ozzone" ]; then
+        already_linked=true
+    fi
+fi
+
+if [ "$already_linked" = false ]; then
+
+# Ask user whether to create the symlink
+printf "Do you want to link %s -> %s ? [y/N] " "$usrzone" "$ozzone"
+read ans
+case "$ans" in
+    [Yy]*)
+        # Backup if it exists and is not already the desired symlink
+        if [ -e "$usrzone" ] && [ "$already_linked" = false ]; then
+            mv "$usrzone" "$usrzone.$DATE_SUFFIX"
+            echo "Backed up $usrzone to $usrzone.$DATE_SUFFIX"
+        fi
+
+        ln -sfn "$ozzone" "$usrzone"
+        echo "Linked $usrzone -> $ozzone"
+        ;;
+    *)
+        echo "Skipped $usrzone"
+        ;;
+esac
+
+fi
+
+exit 0
+

@@ -1,0 +1,43 @@
+#!/bin/sh
+# postinstall script for installing network database files (no readlink)
+
+set -eu
+
+DATE_SUFFIX="$(date -u +%Y-%m-%d)"
+FILES="ethertypes protocols rpc services"
+
+for f in $FILES; do
+    etcfile="/etc/$f"
+    ozfile="/opt/oz/etc/$f"
+
+    already_linked=false
+    if [ -h "$etcfile" ]; then
+        # Extract the symlink target using ls+awk (portable)
+        target="$(ls -ld "$etcfile" | awk '{print $NF}')"
+        if [ "$target" = "$ozfile" ]; then
+            already_linked=true
+        fi
+    fi
+
+    # Ask user whether to create the symlink
+    printf "Do you want to link %s -> %s ? [y/N] " "$etcfile" "$ozfile"
+    read ans
+    case "$ans" in
+        [Yy]*)
+            # Backup if the file exists and is not already the desired symlink
+            if [ -e "$etcfile" ] && [ "$already_linked" = false ]; then
+                mv "$etcfile" "$etcfile.$DATE_SUFFIX"
+                echo "Backed up $etcfile to $etcfile.$DATE_SUFFIX"
+            fi
+
+            ln -sfn "$ozfile" "$etcfile"
+            echo "Linked $etcfile -> $ozfile"
+            ;;
+        *)
+            echo "Skipped $etcfile"
+            ;;
+    esac
+done
+
+exit 0
+

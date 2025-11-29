@@ -1,0 +1,119 @@
+#!/bin/sh
+# make_svr4_pkg -- create SVR4 package from $STAGING and package meta (hooks)
+# Usage:
+#   make_svr4_pkg --staging /path/to/staging \
+#                 --pkgname OZname \
+#                 --version 1.2.3 \
+#                 --prefix /opt/oz \
+#                 [--pkgarch all] \
+#                 [--hooksdir /path/to/recipe/hooks]
+set -eu
+
+OUT=/export/home/operz/src/ozone/ozone-build/out/Spool
+
+usage() {
+  echo "Usage: $0 --staging STAGING --pkgname PKG --version VER --prefix PREFIX [--pkgarch ARCH] [--hooksdir HOOKSDIR]" >&2
+  exit 2
+}
+
+STAGING=; PKG=; VERSION=; PREFIX=; PKGARCH=all; HOOKSDIR=
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --staging) STAGING=$2; shift 2;;
+    --pkgname) PKG=$2; shift 2;;
+    --version) VERSION=$2; shift 2;;
+    --prefix) PREFIX=$2; shift 2;;
+    --pkgarch) PKGARCH=$2; shift 2;;
+    --hooksdir) HOOKSDIR=$2; shift 2;;
+    *) echo "Unknown arg: $1"; usage;;
+  esac
+done
+
+[ -n "$STAGING" ] || usage
+[ -n "$PKG" ] || usage
+[ -n "$VERSION" ] || usage
+[ -n "$PREFIX" ] || usage
+
+TMP=$(mktemp -d /tmp/svr4pkg.XXXX)
+#trap 'rm -rf "$TMP"' EXIT
+
+PKGMETA="$TMP/pkgmeta"
+mkdir -p "$PKGMETA"
+
+# write a minimal pkginfo
+cat > "$PKGMETA/pkginfo" <<EOF
+PKG=${PKG}
+NAME="${PKG} package"
+VERSION=${VERSION}
+ARCH=${PKGARCH}
+CATEGORY=application
+BASEDIR=/
+VENDOR=OZone Packages
+EMAIL=operz@coralcmd.net
+PSTAMP=manual
+EOF
+
+# generate prototype from staging
+echo "Generating prototype (pkgproto) from staging: $STAGING"
+if ! command -v pkgproto >/dev/null 2>&1; then
+  echo "Error: pkgproto not found" >&2
+  exit 1
+fi
+cd "$STAGING"
+
+echo 'i pkginfo' >>"$PKGMETA/prototype"
+pkgproto . >> "$PKGMETA/prototype" || true
+sed -i "s|${LOGNAME}|root|g" "$PKGMETA/prototype"
+# If hooks dir provided, copy scripts into pkgmeta and append "i <name>" entries
+if [ -n "$HOOKSDIR" ] && [ -d "$HOOKSDIR" ]; then
+  for h in preinstall postinstall preremove postremove checkinstall; do
+    if [ -f "$HOOKSDIR/$h" ]; then
+      echo "Adding hook: $h"
+      cp "$HOOKSDIR/$h" "$PKGMETA/$h"
+      chmod +x "$PKGMETA/$h"
+      # pkgproto won't add these for us; add install script entries to prototype.
+      # The prototype 'i' entry tells pkgmk to treat them as install-time scripts.
+      # Just append the token name; pkgmk expects to find these in the package meta dir.
+      printf "i %s\n" "$h" >> "$PKGMETA/prototype"
+    fi
+  done
+fi
+if [ -f "${HOOKSDIR}/../proto" ]; then
+	cat "${HOOKSDIR}/../proto" >> "$PKGMETA/prototype"
+fi
+
+# Build spool/package directory with pkgmk
+mkdir -p "$OUT"
+echo "Running pkgmk to build package spool in: $OUT"
+cd "$PKGMETA"
+if ! command -v pkgmk >/dev/null 2>&1; then
+  echo "Error: pkgmk not found" >&2
+  exit 1
+fi
+# -o to override ownership checks (useful in container), -r sets root dir to STAGING, -d is destination dir for spool
+pkgmk -o -r "$STAGING" -d "$OUT" || { echo "pkgmk failed"; exit 1; }
+
+# pkgmk will have created a directory under $OUT with package name (spool). Find it.
+PKGDIR="$(ls -1d "$OUT"/* 2>/dev/null | head -n1 || true)"
+if [ -z "$PKGDIR" ]; then
+  echo "No package spool found in $OUT" >&2
+  exit 1
+fi
+
+if false; then
+# create datastream file via pkgtrans -s
+if command -v pkgtrans >/dev/null 2>&1; then
+  DATFILE="$OUT/${PKG}.pkg"
+  echo "Creating datastream $DATFILE"
+  # pkgtrans -s <spooldir> <datfile> <pkgname>
+  pkgtrans -s "$OUT" "$DATFILE" "$PKG" >/dev/null 2>&1 || { echo "pkgtrans failed"; exit 1; }
+  echo "Datastream created: $DATFILE"
+else
+  echo "Warning: pkgtrans not found; skipping datastream creation. Package spool is in $OUT"
+fi
+fi
+
+cd
+
+echo "Package build complete. Spool/dir: $PKGDIR"
+

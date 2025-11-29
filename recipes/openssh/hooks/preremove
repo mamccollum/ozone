@@ -1,0 +1,11 @@
+#!/bin/sh
+# Disable the service before removing
+if [ -x /usr/sbin/svcadm ]; then
+    /usr/sbin/svcadm disable -s network/ozopensshd 2>/dev/null || true
+fi
+
+rm -f /var/svc/manifest/ozopensshd
+rm -f /lib/svc/method/OZopensshd
+
+exit 0
+

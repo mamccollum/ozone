@@ -1,0 +1,99 @@
+--- Makefile.in.orig	Sat Sep 27 09:32:09 2025
++++ Makefile.in	Sat Sep 27 09:33:52 2025
+@@ -12405,8 +12405,7 @@
+ 	      -e 's/@''GNULIB_HYPOT''@/$(GL_GNULIB_HYPOT)/g' \
+ 	      -e 's/@''GNULIB_HYPOTF''@/$(GL_GNULIB_HYPOTF)/g' \
+ 	      -e 's/@''GNULIB_HYPOTL''@/$(GL_GNULIB_HYPOTL)/g' \
+-	      < $(top_srcdir)/lib/math.in.h | \
+-	  sed -e 's/@''GNULIB_ILOGB''@/$(GL_GNULIB_ILOGB)/g' \
++	      -e 's/@''GNULIB_ILOGB''@/$(GL_GNULIB_ILOGB)/g' \
+ 	      -e 's/@''GNULIB_ILOGBF''@/$(GL_GNULIB_ILOGBF)/g' \
+ 	      -e 's/@''GNULIB_ILOGBL''@/$(GL_GNULIB_ILOGBL)/g' \
+ 	      -e 's/@''GNULIB_ISFINITE''@/$(GL_GNULIB_ISFINITE)/g' \
+@@ -12463,8 +12462,7 @@
+ 	      -e 's/@''GNULIB_MDA_Y0''@/$(GL_GNULIB_MDA_Y0)/g' \
+ 	      -e 's/@''GNULIB_MDA_Y1''@/$(GL_GNULIB_MDA_Y1)/g' \
+ 	      -e 's/@''GNULIB_MDA_YN''@/$(GL_GNULIB_MDA_YN)/g' \
+-	  | \
+-	  sed -e 's|@''HAVE_ACOSF''@|$(HAVE_ACOSF)|g' \
++	      -e 's|@''HAVE_ACOSF''@|$(HAVE_ACOSF)|g' \
+ 	      -e 's|@''HAVE_ACOSL''@|$(HAVE_ACOSL)|g' \
+ 	      -e 's|@''HAVE_ASINF''@|$(HAVE_ASINF)|g' \
+ 	      -e 's|@''HAVE_ASINL''@|$(HAVE_ASINL)|g' \
+@@ -12560,8 +12558,7 @@
+ 	      -e 's|@''HAVE_DECL_TRUNC''@|$(HAVE_DECL_TRUNC)|g' \
+ 	      -e 's|@''HAVE_DECL_TRUNCF''@|$(HAVE_DECL_TRUNCF)|g' \
+ 	      -e 's|@''HAVE_DECL_TRUNCL''@|$(HAVE_DECL_TRUNCL)|g' \
+-	  | \
+-	  sed -e 's|@''REPLACE_ACOSF''@|$(REPLACE_ACOSF)|g' \
++	      -e 's|@''REPLACE_ACOSF''@|$(REPLACE_ACOSF)|g' \
+ 	      -e 's|@''REPLACE_ASINF''@|$(REPLACE_ASINF)|g' \
+ 	      -e 's|@''REPLACE_ATANF''@|$(REPLACE_ATANF)|g' \
+ 	      -e 's|@''REPLACE_ATAN2F''@|$(REPLACE_ATAN2F)|g' \
+@@ -12643,7 +12640,7 @@
+ 	      -e 's|@''REPLACE_TRUNCL''@|$(REPLACE_TRUNCL)|g' \
+ 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+ 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'; \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'  < $(top_srcdir)/lib/math.in.h; \
+ 	} > $@-t && \
+ 	mv $@-t $@
+ @RELOCATABLE_VIA_WRAPPER_TRUE@uninstall-hook: uninstall-relocwrapper
+@@ -13593,8 +13590,7 @@
+ 	      -e 's/@''GNULIB_MDA_SWAB''@/$(GL_GNULIB_MDA_SWAB)/g' \
+ 	      -e 's/@''GNULIB_MDA_UNLINK''@/$(GL_GNULIB_MDA_UNLINK)/g' \
+ 	      -e 's/@''GNULIB_MDA_WRITE''@/$(GL_GNULIB_MDA_WRITE)/g' \
+-	      < $(top_srcdir)/lib/unistd.in.h | \
+-	  sed -e 's|@''HAVE_CHOWN''@|$(HAVE_CHOWN)|g' \
++	      -e 's|@''HAVE_CHOWN''@|$(HAVE_CHOWN)|g' \
+ 	      -e 's|@''HAVE_COPY_FILE_RANGE''@|$(HAVE_COPY_FILE_RANGE)|g' \
+ 	      -e 's|@''HAVE_DUP3''@|$(HAVE_DUP3)|g' \
+ 	      -e 's|@''HAVE_EUIDACCESS''@|$(HAVE_EUIDACCESS)|g' \
+@@ -13641,8 +13637,7 @@
+ 	      -e 's|@''HAVE_DECL_TTYNAME_R''@|$(HAVE_DECL_TTYNAME_R)|g' \
+ 	      -e 's|@''HAVE_OS_H''@|$(HAVE_OS_H)|g' \
+ 	      -e 's|@''HAVE_SYS_PARAM_H''@|$(HAVE_SYS_PARAM_H)|g' \
+-	  | \
+-	  sed -e 's|@''REPLACE_ACCESS''@|$(REPLACE_ACCESS)|g' \
++	      -e 's|@''REPLACE_ACCESS''@|$(REPLACE_ACCESS)|g' \
+ 	      -e 's|@''REPLACE_CHOWN''@|$(REPLACE_CHOWN)|g' \
+ 	      -e 's|@''REPLACE_CLOSE''@|$(REPLACE_CLOSE)|g' \
+ 	      -e 's|@''REPLACE_DUP''@|$(REPLACE_DUP)|g' \
+@@ -13689,7 +13684,7 @@
+ 	      -e 's|@''UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS''@|$(UNISTD_H_HAVE_WINSOCK2_H_AND_USE_SOCKETS)|g' \
+ 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+ 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'; \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' < $(top_srcdir)/lib/unistd.in.h; \
+ 	} > $@-t && \
+ 	mv $@-t $@
+ 
+@@ -13770,8 +13765,7 @@
+ 	      -e 's/@''GNULIB_WCSWIDTH''@/$(GL_GNULIB_WCSWIDTH)/g' \
+ 	      -e 's/@''GNULIB_WCSFTIME''@/$(GL_GNULIB_WCSFTIME)/g' \
+ 	      -e 's/@''GNULIB_MDA_WCSDUP''@/$(GL_GNULIB_MDA_WCSDUP)/g' \
+-	      < $(top_srcdir)/lib/wchar.in.h | \
+-	  sed -e 's|@''HAVE_WINT_T''@|$(HAVE_WINT_T)|g' \
++	      -e 's|@''HAVE_WINT_T''@|$(HAVE_WINT_T)|g' \
+ 	      -e 's|@''HAVE_BTOWC''@|$(HAVE_BTOWC)|g' \
+ 	      -e 's|@''HAVE_MBSINIT''@|$(HAVE_MBSINIT)|g' \
+ 	      -e 's|@''HAVE_MBRTOWC''@|$(HAVE_MBRTOWC)|g' \
+@@ -13814,8 +13808,7 @@
+ 	      -e 's|@''HAVE_DECL_WCTOB''@|$(HAVE_DECL_WCTOB)|g' \
+ 	      -e 's|@''HAVE_DECL_WCSDUP''@|$(HAVE_DECL_WCSDUP)|g' \
+ 	      -e 's|@''HAVE_DECL_WCWIDTH''@|$(HAVE_DECL_WCWIDTH)|g' \
+-	  | \
+-	  sed -e 's|@''REPLACE_MBSTATE_T''@|$(REPLACE_MBSTATE_T)|g' \
++	      -e 's|@''REPLACE_MBSTATE_T''@|$(REPLACE_MBSTATE_T)|g' \
+ 	      -e 's|@''REPLACE_BTOWC''@|$(REPLACE_BTOWC)|g' \
+ 	      -e 's|@''REPLACE_WCTOB''@|$(REPLACE_WCTOB)|g' \
+ 	      -e 's|@''REPLACE_FREE''@|$(REPLACE_FREE)|g' \
+@@ -13833,7 +13826,7 @@
+ 	      -e 's|@''REPLACE_WCSTOK''@|$(REPLACE_WCSTOK)|g' \
+ 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+ 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+-	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'; \
++	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' < $(top_srcdir)/lib/wchar.in.h; \
+ 	} > $@-t && \
+ 	mv $@-t $@
+ 

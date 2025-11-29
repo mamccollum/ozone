@@ -1,0 +1,11 @@
+--- src/system.c.orig	Thu Sep 25 06:01:27 2025
++++ src/system.c	Thu Sep 25 06:01:46 2025
+@@ -24,6 +24,8 @@
+ #include <signal.h>
+ #include <wordsplit.h>
+ 
++extern char **environ;
++
+ static _Noreturn void
+ xexec (const char *cmd)
+ {

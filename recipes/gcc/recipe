@@ -1,0 +1,121 @@
+#!/bin/sh
+# simple recipe for OZbinutils (GNU binutils)
+set -eu
+
+# metadata - edit per package
+NAME=gcc
+VER=9.5.0
+PKGNAME=OZgcc
+PREFIX=/opt/oz
+TARBALL=gcc-${VER}.tar.gz
+TARBALL_URL="http://gnu.mirrorservice.org/gcc/gcc-${VER}/${TARBALL}"
+# optional: set correct sha256 or leave empty to skip check
+TARBALL_SHA256=""
+PATCHDIR="$RECIPEDIR/patches"
+HOOKSDIR="$RECIPEDIR/hooks"
+
+CPPFLAGS="-I${PREFIX}/include"
+CFLAGS="-fPIC"
+CXXFLAGS="-fPIC"
+LDFLAGS="-L${PREFIX}/lib -static-libgcc"
+
+: "${TOP:=$(pwd)}"
+: "${WORK:=${WORK:-${TOP}/build/${NAME}}}"
+: "${STAGING:=${STAGING:-${TOP}/build/${NAME}-staging}}"
+
+mkdir -p "${TOP}/src" "${WORK}" "${STAGING}"
+
+fetch() {
+	cd "${TOP}/src"
+	if [ ! -f "${TARBALL}" ]; then
+		echo "Downloading ${TARBALL_URL}..."
+curl -sSL -o "${TARBALL}" "${TARBALL_URL}" || { echo "curl failed"; exit 1; }
+	else
+		echo "Using cached ${TARBALL}"
+	fi
+
+	if [ -n "${TARBALL_SHA256}" ] && command -v sha256sum >/dev/null 2>&1; then
+		echo "${TARBALL_SHA256}	${TARBALL}" | sha256sum -c - || { echo "sha256 mismatch"; exit 1; }
+	else
+		echo "No checksum verification performed"
+	fi
+}
+
+extract() {
+	rm -rf "${WORK}" "${STAGING}"
+	mkdir -p "${WORK}" "${STAGING}"
+	gtar -C "${WORK}" -xzf "${TOP}/src/${TARBALL}"
+}
+
+apply_patches() {
+	if [ -d "${PATCHDIR}" ]; then
+		for p in "${PATCHDIR}"/*.patch; do
+			[ -f "$p" ] || continue
+			echo "Applying patch $p"
+			( cd "${WORK}/${NAME}-${VER}" && patch -p1 < "$p" ) || { echo "patch failed"; exit 1; }
+		done
+	fi
+}
+
+build() {
+	cd "${WORK}/${NAME}-${VER}"
+	sed -i 's|http|ftp|g' ./contrib/download_prerequisites
+	sed -i 's/tar \-x/gtar \-x/g' ./contrib/download_prerequisites
+	./contrib/download_prerequisites --no-verify
+	# ensure DESTDIR install goes into staging
+	./configure --prefix="${PREFIX}" \
+	--enable-static --disable-shared \
+	--enable-languages=c,c++,fortran,go \
+	--with-gnu-as --with-as=${PREFIX}/bin/as \
+	--with-gnu-ld --with-ld=${PREFIX}/bin/ld \
+	--disable-libsanitizer \
+	CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CPPFLAGS="${CPPFLAGS}" \
+	CXXFLAGS="${CXXFLAGS}" \
+	AS=${PREFIX}/bin/as LD=${PREFIX}/bin/ld \
+	CC_FOR_TARGET=/opt/gcc/9.5.0/bin/gcc \
+	CXX_FOR_TARGET=/opt/gcc/9.5.0/bin/g++
+if false; then
+find libiberty -type f \( -name '*.c' -o -name '*.h' \) -exec sh -c '
+for f; do
+  cp "$f" "$f.orig"
+  {
+    printf "#ifndef PTR\n#define PTR void *\n#endif\n"
+    printf "#ifndef _XOPEN_SOURCE\n#define _XOPEN_SOURCE 600\n#endif\n"
+    printf "#ifndef _POSIX_C_SOURCE\n#define _POSIX_C_SOURCE 200112L\n#endif\n"
+    printf "#include <signal.h>\n#include <string.h>\n#include <limits.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <sys/types.h>\n#include <unistd.h>\n\n"
+    printf "#include <sys/procset.h>   /* procset_t */\n#include <sys/procfs.h>    /* for prstatus_t, etc. if needed */\n\n"
+
+    cat "$f"
+  } > "$f.tmp" && mv "$f.tmp" "$f"
+done
+' sh {} +
+
+	sed -i 's/\bsimple-object-coff\.c\b//g; s/\bsimple-object-mach-o\.c\b//g; s/\bsimple-object-xcoff\.c\b//g' libiberty/Makefile.in
+	sed -i.bak \
+		-e 's/\([[:space:]]*\.\?\/simple-object-coff\.\$*(objext)\)//g' \
+		-e 's/\([[:space:]]*\.\?\/simple-object-mach-o\.\$*(objext)\)//g' \
+		-e 's/\([[:space:]]*\.\?\/simple-object-xcoff\.\$*(objext)\)//g' \
+	libiberty/Makefile.in
+fi
+
+	gmake -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
+	gmake install DESTDIR="${STAGING}"
+}
+
+package() {
+	sh "${TOP}/tools/make_svr4_pkg" \
+		--staging "${STAGING}" \
+		--pkgname "${PKGNAME}" \
+		--version "${VER}" \
+		--prefix "${PREFIX}" \
+		--hooksdir "${HOOKSDIR}"
+}
+
+# allow running phases directly: ./recipe fetch|extract|apply_patches|build|package
+if [ "$#" -gt 0 ]; then
+  for phase in "$@"; do
+    "$phase"
+  done
+fi
+
+

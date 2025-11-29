@@ -1,0 +1,12 @@
+#!/bin/sh
+# Re-import the manifest to keep SMF in sync
+if [ -x /usr/sbin/svccfg ]; then
+    /usr/sbin/svccfg import /var/svc/manifest/network/ssh/ozopensshd.xml 2>/dev/null || true
+fi
+
+if [ -x /usr/sbin/svcadm ]; then
+    /usr/sbin/svcadm refresh network/ozopensshd 2>/dev/null || true
+fi
+
+exit 0
+

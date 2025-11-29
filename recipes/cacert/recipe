@@ -1,0 +1,79 @@
+#!/bin/sh
+# simple recipe for OZhello (GNU hello)
+set -eu
+
+# metadata - edit per package
+NAME=cacert
+VER=2025-09-09
+PKGNAME=OZcacert
+PREFIX=/opt/oz
+TARBALL="${NAME}-${VER}.pem"
+TARBALL_URL="https://curl.se/ca/${TARBALL}"
+# optional: set correct sha256 or leave empty to skip check
+TARBALL_SHA256=""
+PATCHDIR="$RECIPEDIR/patches"
+HOOKSDIR="$RECIPEDIR/hooks"
+
+: "${TOP:=$(pwd)}"
+: "${WORK:=${WORK:-${TOP}/build/${NAME}}}"
+: "${STAGING:=${STAGING:-${TOP}/build/${NAME}-staging}}"
+
+mkdir -p "${TOP}/src" "${WORK}" "${STAGING}"
+
+fetch() {
+	cd "${TOP}/src"
+	if [ ! -f "${TARBALL}" ]; then
+		echo "Downloading ${TARBALL_URL}..."
+curl -sSL -o "${TARBALL}" "${TARBALL_URL}" || { echo "curl failed"; exit 1; }
+	else
+		echo "Using cached ${TARBALL}"
+	fi
+
+	if [ -n "${TARBALL_SHA256}" ] && command -v sha256sum >/dev/null 2>&1; then
+		echo "${TARBALL_SHA256}	${TARBALL}" | sha256sum -c - || { echo "sha256 mismatch"; exit 1; }
+	else
+		echo "No checksum verification performed"
+	fi
+}
+
+extract() {
+	rm -rf "${WORK}" "${STAGING}"
+	mkdir -p "${WORK}" "${STAGING}"
+	mkdir -p "${WORK}/${NAME}-${VER}"
+	#gtar -C "${WORK}" -xzf "${TOP}/src/${TARBALL}"
+	cp "${TOP}/src/${TARBALL}" ${WORK}/${NAME}-${VER}
+}
+
+apply_patches() {
+	if [ -d "${PATCHDIR}" ]; then
+		for p in "${PATCHDIR}"/*.patch; do
+			[ -f "$p" ] || continue
+			echo "Applying patch $p"
+			( cd "${WORK}/${NAME}-${VER}" && patch -p1 < "$p" ) || { echo "patch failed"; exit 1; }
+		done
+	fi
+}
+
+build() {
+	cd "${WORK}/${NAME}-${VER}"
+	mkdir -p "${STAGING}/${PREFIX}/ssl/certs"
+	cp cacert-${VER}.pem "${STAGING}/${PREFIX}/ssl/certs/cacert.pem"
+}
+
+package() {
+	sh "${TOP}/tools/make_svr4_pkg" \
+		--staging "${STAGING}" \
+		--pkgname "${PKGNAME}" \
+		--version "${VER}" \
+		--prefix "${PREFIX}" \
+		--hooksdir "${HOOKSDIR}"
+}
+
+# allow running phases directly: ./recipe fetch|extract|apply_patches|build|package
+if [ "$#" -gt 0 ]; then
+  for phase in "$@"; do
+    "$phase"
+  done
+fi
+
+
