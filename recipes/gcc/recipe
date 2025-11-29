@@ -72,8 +72,8 @@ build() {
 	CFLAGS="${CFLAGS}" LDFLAGS="${LDFLAGS}" CPPFLAGS="${CPPFLAGS}" \
 	CXXFLAGS="${CXXFLAGS}" \
 	AS=${PREFIX}/bin/as LD=${PREFIX}/bin/ld \
-	CC_FOR_TARGET=/opt/gcc/9.5.0/bin/gcc \
-	CXX_FOR_TARGET=/opt/gcc/9.5.0/bin/g++
+	CC_FOR_TARGET=${PREFIX}/bin/gcc \
+	CXX_FOR_TARGET=${PREFIX}/bin/g++
 if false; then
 find libiberty -type f \( -name '*.c' -o -name '*.h' \) -exec sh -c '
 for f; do
