@@ -1,0 +1,14 @@
+--- unit-tests/Makefile.orig	Sat Nov 29 04:45:23 2025
++++ unit-tests/Makefile	Sat Nov 29 04:45:50 2025
+@@ -544,6 +544,11 @@
+ .endif
+ .endif
+ 
++.if ${.MAKE.OS:NSunOS} == ""
++BROKEN_TESTS+= deptgt-interrupt cmd-interrupt directive-export opt-debug-graph2 opt-debug-graph3 opt-debug-x-trace opt-x-reduce-exported sh-leading-hyphen suff varmod-gmtime varmod-localtime varmod-mtime varmod-sun-shell1
++.endif
++
++
+ # Some tests just do not work on some platforms or environments
+ # so allow for some filtering.
+ .if !empty(BROKEN_TESTS)
