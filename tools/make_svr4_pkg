@@ -9,7 +9,7 @@
 #                 [--hooksdir /path/to/recipe/hooks]
 set -eu
 
-OUT=/export/home/operz/src/ozone/ozone-build/out/Spool
+OUT=/export/home/operz/src/ozone/ozone/out/Spool
 
 usage() {
   echo "Usage: $0 --staging STAGING --pkgname PKG --version VER --prefix PREFIX [--pkgarch ARCH] [--hooksdir HOOKSDIR]" >&2
